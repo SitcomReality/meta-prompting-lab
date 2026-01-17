@@ -17,7 +17,10 @@ export function createInitialState() {
     agents: defaultScenario.defaultAgents.map(a => ({
       ...a,
       history: [],
-      memory: [], // Condensed memory items
+      // Condensed memory items (object shape for stability)
+      memory: { events: [], stances: [], claims: [] },
+      // Track self-modifications over time
+      promptChangeLog: [],
       isActive: true
     })),
     history: [],
@@ -37,7 +40,7 @@ export function createStateStore(initialState = createInitialState()) {
   }
 
   function setState(partial) {
-    // Deep merging or simple shallow? Let's stick to shallow for root properties but handle nested carefully if needed.
+    // Shallow merge at root; callers should pass fully updated nested branches.
     state = { ...state, ...partial };
     listeners.forEach((fn) => fn(state));
   }

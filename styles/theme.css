@@ -13,12 +13,13 @@
 }
 
 .app-body {
-  background-color: --color-bg;
+  background-color: var(--color-bg);
   color: var(--color-text-primary);
 }
 
 .app-shell {
   background-color: var(--color-surface);
+  color: var(--color-text-primary);
 }
 
 .panel--primary {

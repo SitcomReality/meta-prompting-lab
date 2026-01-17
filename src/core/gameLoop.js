@@ -55,11 +55,26 @@ export async function executeTurn(services) {
       }
 
       // 2. Update the specific agent in our local array
+      const existingLog = Array.isArray(agent.promptChangeLog) ? agent.promptChangeLog : [];
+      const hasStrategyUpdate = !!result.proposedStrategyUpdate;
+
       updatedAgents[i] = {
         ...agent,
         strategyPrompt: result.proposedStrategyUpdate || agent.strategyPrompt,
         history: [...agent.history, { role: "assistant", content: result.publicAction }],
-        memory: newMemory
+        memory: newMemory,
+        promptChangeLog: hasStrategyUpdate
+          ? [
+              ...existingLog,
+              {
+                step: state.session.stepIndex + 1,
+                previousStrategy: agent.strategyPrompt,
+                newStrategy: result.proposedStrategyUpdate,
+                rationale: result.updateRationale,
+                timestamp: Date.now(),
+              },
+            ]
+          : existingLog,
       };
 
       // 3. Update current game state with the new action so next agent sees it immediately

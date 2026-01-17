@@ -27,14 +27,14 @@ export function createAgentMindsPanel(services) {
   configArea.style.gap = "var(--spacing-4)";
   configArea.style.minHeight = "0";
 
-  // Sub-tabs for Strategy vs Memory
+  // Sub-tabs for Strategy vs Memory vs Prompt Log
   const subTabs = document.createElement("div");
   subTabs.style.display = "flex";
   subTabs.style.gap = "var(--spacing-4)";
   subTabs.style.borderBottom = "1px solid var(--color-border-subtle)";
   subTabs.style.paddingBottom = "var(--spacing-2)";
 
-  let activeSubTab = "strategy"; // "strategy" or "memory"
+  let activeSubTab = "strategy"; // "strategy" | "memory" | "promptLog"
 
   const createSubTab = (id, label) => {
     const btn = document.createElement("button");
@@ -52,8 +52,10 @@ export function createAgentMindsPanel(services) {
 
   const strategyTabBtn = createSubTab("strategy", "Self-Modifiable Strategy");
   const memoryTabBtn = createSubTab("memory", "Condensed Memory");
+  const promptLogTabBtn = createSubTab("promptLog", "Prompt Change Log");
   subTabs.appendChild(strategyTabBtn);
   subTabs.appendChild(memoryTabBtn);
+  subTabs.appendChild(promptLogTabBtn);
 
   const contentContainer = document.createElement("div");
   contentContainer.style.flex = "1";
@@ -112,6 +114,7 @@ export function createAgentMindsPanel(services) {
     // Sub-tab styling
     strategyTabBtn.style.color = activeSubTab === "strategy" ? "var(--color-accent)" : "var(--color-text-muted)";
     memoryTabBtn.style.color = activeSubTab === "memory" ? "var(--color-accent)" : "var(--color-text-muted)";
+    promptLogTabBtn.style.color = activeSubTab === "promptLog" ? "var(--color-accent)" : "var(--color-text-muted)";
 
     contentContainer.innerHTML = "";
     if (!selectedAgent) {
@@ -127,7 +130,7 @@ export function createAgentMindsPanel(services) {
       if (document.activeElement !== strategyInput) {
         strategyInput.value = selectedAgent.strategyPrompt || "";
       }
-    } else {
+    } else if (activeSubTab === "memory") {
       const memoryView = document.createElement("div");
       memoryView.className = "memory-viewer";
       memoryView.style.fontSize = "var(--font-size-sm)";
@@ -144,6 +147,51 @@ export function createAgentMindsPanel(services) {
       
       memoryView.textContent = text || "No memory entries yet. Execute a turn to populate.";
       contentContainer.appendChild(memoryView);
+    } else if (activeSubTab === "promptLog") {
+      const logWrapper = document.createElement("div");
+      logWrapper.style.display = "flex";
+      logWrapper.style.flexDirection = "column";
+      logWrapper.style.gap = "var(--spacing-4)";
+      logWrapper.style.fontSize = "var(--font-size-sm)";
+      logWrapper.style.overflowY = "auto";
+
+      const log = Array.isArray(selectedAgent.promptChangeLog)
+        ? selectedAgent.promptChangeLog
+        : [];
+
+      if (log.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "field-label";
+        empty.textContent = "No prompt changes yet. Execute turns where the agent self-modifies.";
+        logWrapper.appendChild(empty);
+      } else {
+        log
+          .slice()
+          .reverse()
+          .forEach((entry) => {
+            const card = document.createElement("div");
+            card.className = "history-card";
+            const meta = document.createElement("div");
+            meta.className = "history-card__meta";
+            const date = new Date(entry.timestamp);
+            meta.textContent = `Turn ${entry.step} • ${date.toLocaleTimeString()}`;
+
+            const rationale = document.createElement("div");
+            rationale.className = "history-card__thought";
+            rationale.textContent = entry.rationale || "No rationale provided.";
+
+            const diff = document.createElement("div");
+            diff.className = "history-card__action";
+            diff.textContent = "Strategy updated.";
+
+            card.appendChild(meta);
+            card.appendChild(diff);
+            card.appendChild(rationale);
+            logWrapper.appendChild(card);
+          });
+      }
+
+      contentContainer.appendChild(logWrapper);
     }
   }
 

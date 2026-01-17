@@ -35,7 +35,13 @@ export function createControlPanel(services) {
       newState.session.currentScenarioId = scenario.id;
       newState.gameState = scenario.initialGameState;
       newState.metaPrompt.rules = [...scenario.initialRules];
-      newState.agents = scenario.defaultAgents.map(a => ({...a, history: [], memory: [], isActive: true}));
+      newState.agents = scenario.defaultAgents.map(a => ({
+        ...a,
+        history: [],
+        memory: { events: [], stances: [], claims: [] },
+        promptChangeLog: [],
+        isActive: true
+      }));
       newState.ui.selectedAgentId = scenario.defaultAgents[0].id;
       store.setState(newState);
     } else {
