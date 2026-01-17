@@ -8,39 +8,54 @@ export async function executeTurn(services) {
 
   store.setState({ 
     session: { ...state.session, isRunning: true },
-    ui: { ...state.ui, statusMessage: "Agents are thinking..." }
+    ui: { ...state.ui, statusMessage: "All agents are deliberating..." }
   });
 
-  const activeAgent = state.agents[0]; // For v0, we process the first agent
-  const context = {
-    gameState: state.gameState || "The game has just begun.",
-    globalRules: state.metaPrompt.rules,
-  };
+  const updatedHistory = [...state.history];
+  let currentGameState = state.gameState;
+  const updatedAgents = [...state.agents];
 
-  const result = await runAgentStep(activeAgent, context);
+  // Process each active agent sequentially in the turn
+  for (let i = 0; i < updatedAgents.length; i++) {
+    const agent = updatedAgents[i];
+    if (!agent.isActive) continue;
 
-  // Update State
-  const newHistoryItem = {
-    step: state.session.stepIndex + 1,
-    agentId: activeAgent.id,
-    agentName: activeAgent.name,
-    thought: result.thought,
-    action: result.publicAction,
-    strategyUpdate: result.proposedStrategyUpdate,
-    rationale: result.updateRationale,
-    timestamp: Date.now(),
-  };
+    const context = {
+      gameState: currentGameState,
+      globalRules: state.metaPrompt.rules,
+    };
 
-  const updatedAgents = state.agents.map(a => {
-    if (a.id === activeAgent.id) {
-      return {
-        ...a,
-        strategyPrompt: result.proposedStrategyUpdate || a.strategyPrompt,
-        history: [...a.history, { role: "assistant", content: result.publicAction }]
+    try {
+      const result = await runAgentStep(agent, context);
+
+      const turnResult = {
+        step: state.session.stepIndex + 1,
+        agentId: agent.id,
+        agentName: agent.name,
+        thought: result.thought,
+        action: result.publicAction,
+        strategyUpdate: result.proposedStrategyUpdate,
+        rationale: result.updateRationale,
+        timestamp: Date.now(),
       };
+
+      updatedHistory.unshift(turnResult);
+      
+      // Update the specific agent in our local array
+      updatedAgents[i] = {
+        ...agent,
+        strategyPrompt: result.proposedStrategyUpdate || agent.strategyPrompt,
+        history: [...agent.history, { role: "assistant", content: result.publicAction }],
+        // Add to condensed memory if logic exists, for now just keeping it structured
+      };
+
+      // Update current game state with the new action so next agent sees it immediately
+      currentGameState += `\n${agent.name}: ${result.publicAction}`;
+
+    } catch (err) {
+      console.error(`Error processing agent ${agent.name}:`, err);
     }
-    return a;
-  });
+  }
 
   store.setState({
     session: {
@@ -48,10 +63,11 @@ export async function executeTurn(services) {
       stepIndex: state.session.stepIndex + 1,
       isRunning: false,
     },
+    gameState: currentGameState,
     agents: updatedAgents,
-    history: [newHistoryItem, ...state.history],
-    ui: { ...state.ui, statusMessage: "Turn complete." }
+    history: updatedHistory,
+    ui: { ...state.ui, statusMessage: `Turn ${state.session.stepIndex + 1} completed.` }
   });
 
-  bus.emit("TURN_COMPLETED", newHistoryItem);
+  bus.emit("TURN_COMPLETED", { step: state.session.stepIndex + 1 });
 }

@@ -1,31 +1,29 @@
+import { SCENARIOS } from "./scenarios.js";
+
 export function createInitialState() {
+  const defaultScenario = SCENARIOS.debate;
+  
   return {
     session: {
       id: "session_" + Date.now(),
       stepIndex: 0,
       isRunning: false,
+      currentScenarioId: defaultScenario.id,
     },
-    gameState: "A high-stakes debate about the future of AI governance. You are the lead skeptic.",
+    gameState: defaultScenario.initialGameState,
     metaPrompt: {
-      rules: [
-        "Recursive adaptation: You MUST update your strategy if your current one fails.",
-        "Consistency: Maintain your core identity despite strategy shifts.",
-        "Conciseness: Keep public actions under 50 words."
-      ],
+      rules: [...defaultScenario.initialRules],
     },
-    agents: [
-      {
-        id: "bot_1",
-        name: "Socrates-GPT",
-        corePrompt: "You are a strategic debater. Your goal is to win the argument by questioning assumptions.",
-        strategyPrompt: "Initial Strategy: Be polite but firm. Use the Socratic method to lead opponents into contradictions.",
-        history: []
-      }
-    ],
+    agents: defaultScenario.defaultAgents.map(a => ({
+      ...a,
+      history: [],
+      memory: [], // Condensed memory items
+      isActive: true
+    })),
     history: [],
     ui: {
-      activePanel: "workspace",
-      statusMessage: "Ready to begin."
+      selectedAgentId: defaultScenario.defaultAgents[0].id,
+      statusMessage: "Scenario initialized: " + defaultScenario.name
     },
   };
 }
@@ -39,6 +37,7 @@ export function createStateStore(initialState = createInitialState()) {
   }
 
   function setState(partial) {
+    // Deep merging or simple shallow? Let's stick to shallow for root properties but handle nested carefully if needed.
     state = { ...state, ...partial };
     listeners.forEach((fn) => fn(state));
   }

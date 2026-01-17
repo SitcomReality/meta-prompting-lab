@@ -39,7 +39,7 @@
 
 .main-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1.1fr 1fr;
+  grid-template-columns: 1fr 1.2fr 1.2fr;
 }
 
 /* Mobile-first: single column stack, no scroll if possible */
