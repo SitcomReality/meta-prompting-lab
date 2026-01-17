@@ -1,0 +1,44 @@
+:root {
+  --color-bg: #111110;
+  --color-surface: #181816;
+  --color-surface-elevated: #20201e;
+
+  --color-border-subtle: #2a2a27;
+
+  --color-text-primary: #f6f3ea;
+  --color-text-muted: #a39f92;
+
+  --color-accent: #f5b041; /* warm amber, avoids blue/purple */
+  --color-accent-on: #1a1208;
+}
+
+.app-body {
+  background-color: --color-bg;
+  color: var(--color-text-primary);
+}
+
+.app-shell {
+  background-color: var(--color-surface);
+}
+
+.panel--primary {
+  background: var(--color-surface-elevated);
+}
+
+.panel--secondary {
+  background: var(--color-surface);
+}
+
+.panel--tertiary {
+  background: var(--color-surface);
+}
+
+.status-bar {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-muted);
+}
+
+.header-bar__mode-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
