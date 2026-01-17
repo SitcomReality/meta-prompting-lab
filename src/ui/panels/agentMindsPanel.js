@@ -87,28 +87,45 @@ export function createAgentMindsPanel(services) {
 
   function render() {
     const state = store.getState();
-    const selectedAgent = state.agents.find(a => a.id === state.ui.selectedAgentId) || state.agents[0];
+    const agents = Array.isArray(state.agents) ? state.agents : [];
+    const selectedAgent = agents.find(a => a.id === state.ui.selectedAgentId) || agents[0] || null;
     
     // Render Tabs
     agentTabs.innerHTML = "";
-    state.agents.forEach(agent => {
-      const tab = document.createElement("button");
-      tab.className = `button ${agent.id === selectedAgent.id ? 'button--primary' : 'button--secondary'}`;
-      tab.style.padding = "4px 12px";
-      tab.textContent = agent.name;
-      tab.onclick = () => store.setState({ ui: { ...state.ui, selectedAgentId: agent.id } });
-      agentTabs.appendChild(tab);
-    });
+    if (agents.length === 0) {
+      const emptyMsg = document.createElement("div");
+      emptyMsg.className = "field-label";
+      emptyMsg.textContent = "No agents available in this scenario.";
+      agentTabs.appendChild(emptyMsg);
+    } else {
+      agents.forEach(agent => {
+        const tab = document.createElement("button");
+        const isSelected = selectedAgent && agent.id === selectedAgent.id;
+        tab.className = `button ${isSelected ? 'button--primary' : 'button--secondary'}`;
+        tab.style.padding = "4px 12px";
+        tab.textContent = agent.name;
+        tab.onclick = () => store.setState({ ui: { ...state.ui, selectedAgentId: agent.id } });
+        agentTabs.appendChild(tab);
+      });
+    }
 
     // Sub-tab styling
     strategyTabBtn.style.color = activeSubTab === "strategy" ? "var(--color-accent)" : "var(--color-text-muted)";
     memoryTabBtn.style.color = activeSubTab === "memory" ? "var(--color-accent)" : "var(--color-text-muted)";
 
     contentContainer.innerHTML = "";
+    if (!selectedAgent) {
+      const placeholder = document.createElement("div");
+      placeholder.className = "field-label";
+      placeholder.textContent = "Select or add an agent to view its configuration.";
+      contentContainer.appendChild(placeholder);
+      return;
+    }
+
     if (activeSubTab === "strategy") {
       contentContainer.appendChild(strategyInput);
       if (document.activeElement !== strategyInput) {
-        strategyInput.value = selectedAgent.strategyPrompt;
+        strategyInput.value = selectedAgent.strategyPrompt || "";
       }
     } else {
       const memoryView = document.createElement("div");
@@ -121,9 +138,9 @@ export function createAgentMindsPanel(services) {
       
       const mem = selectedAgent.memory || { events: [], stances: [], claims: [] };
       let text = "";
-      if (mem.events.length) text += `## EVENTS\n${mem.events.map(e => `- ${e}`).join("\n")}\n\n`;
-      if (mem.stances.length) text += `## STANCES\n${mem.stances.map(s => `- ${s.subject}: ${s.stance} | ${s.reason}`).join("\n")}\n\n`;
-      if (mem.claims.length) text += `## CLAIMS\n${mem.claims.map(c => `- ${c.claim} (${c.status})`).join("\n")}`;
+      if (Array.isArray(mem.events) && mem.events.length) text += `## EVENTS\n${mem.events.map(e => `- ${e}`).join("\n")}\n\n`;
+      if (Array.isArray(mem.stances) && mem.stances.length) text += `## STANCES\n${mem.stances.map(s => `- ${s.subject}: ${s.stance} | ${s.reason}`).join("\n")}\n\n`;
+      if (Array.isArray(mem.claims) && mem.claims.length) text += `## CLAIMS\n${mem.claims.map(c => `- ${c.claim} (${c.status})`).join("\n")}`;
       
       memoryView.textContent = text || "No memory entries yet. Execute a turn to populate.";
       contentContainer.appendChild(memoryView);
