@@ -1,5 +1,7 @@
+import { formatMemoryForPrompt } from "./memoryService.js";
+
 export async function runAgentStep(agent, context) {
-  const { corePrompt, strategyPrompt, history } = agent;
+  const { corePrompt, strategyPrompt, history, memory } = agent;
   const { gameState, globalRules } = context;
 
   const systemMessage = `
@@ -12,6 +14,9 @@ ${globalRules.join("\n")}
 # CURRENT STRATEGY & PERSONALITY
 ${strategyPrompt}
 
+# MEMORY & KNOWLEDGE
+${formatMemoryForPrompt(memory)}
+
 # RESPONSE FORMAT
 You must respond in valid JSON format ONLY. 
 {
@@ -23,10 +28,10 @@ You must respond in valid JSON format ONLY.
 `;
 
   const userMessage = `
-# GAME STATE
+# CURRENT WORLD STATE
 ${gameState}
 
-# RECENT HISTORY
+# RECENT DIALOGUE (Last 5)
 ${history.slice(-5).map(h => `${h.role}: ${h.content}`).join("\n")}
 
 Respond now.

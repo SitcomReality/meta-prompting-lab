@@ -25,10 +25,42 @@ export function createAgentMindsPanel(services) {
   configArea.style.display = "flex";
   configArea.style.flexDirection = "column";
   configArea.style.gap = "var(--spacing-4)";
+  configArea.style.minHeight = "0";
 
-  const strategyLabel = document.createElement("label");
-  strategyLabel.className = "field-label";
-  
+  // Sub-tabs for Strategy vs Memory
+  const subTabs = document.createElement("div");
+  subTabs.style.display = "flex";
+  subTabs.style.gap = "var(--spacing-4)";
+  subTabs.style.borderBottom = "1px solid var(--color-border-subtle)";
+  subTabs.style.paddingBottom = "var(--spacing-2)";
+
+  let activeSubTab = "strategy"; // "strategy" or "memory"
+
+  const createSubTab = (id, label) => {
+    const btn = document.createElement("button");
+    btn.textContent = label;
+    btn.className = "button button--secondary";
+    btn.style.background = "transparent";
+    btn.style.border = "none";
+    btn.style.fontWeight = "bold";
+    btn.onclick = () => {
+      activeSubTab = id;
+      render();
+    };
+    return btn;
+  };
+
+  const strategyTabBtn = createSubTab("strategy", "Self-Modifiable Strategy");
+  const memoryTabBtn = createSubTab("memory", "Condensed Memory");
+  subTabs.appendChild(strategyTabBtn);
+  subTabs.appendChild(memoryTabBtn);
+
+  const contentContainer = document.createElement("div");
+  contentContainer.style.flex = "1";
+  contentContainer.style.display = "flex";
+  contentContainer.style.flexDirection = "column";
+  contentContainer.style.overflowY = "auto";
+
   const strategyInput = document.createElement("textarea");
   strategyInput.className = "field-input field-input--multiline";
   strategyInput.style.flex = "1";
@@ -68,18 +100,41 @@ export function createAgentMindsPanel(services) {
       agentTabs.appendChild(tab);
     });
 
-    // Update strategy input
-    strategyLabel.textContent = `Prompt Engineering: ${selectedAgent.name}`;
-    if (document.activeElement !== strategyInput) {
-      strategyInput.value = selectedAgent.strategyPrompt;
+    // Sub-tab styling
+    strategyTabBtn.style.color = activeSubTab === "strategy" ? "var(--color-accent)" : "var(--color-text-muted)";
+    memoryTabBtn.style.color = activeSubTab === "memory" ? "var(--color-accent)" : "var(--color-text-muted)";
+
+    contentContainer.innerHTML = "";
+    if (activeSubTab === "strategy") {
+      contentContainer.appendChild(strategyInput);
+      if (document.activeElement !== strategyInput) {
+        strategyInput.value = selectedAgent.strategyPrompt;
+      }
+    } else {
+      const memoryView = document.createElement("div");
+      memoryView.className = "memory-viewer";
+      memoryView.style.fontSize = "var(--font-size-sm)";
+      memoryView.style.whiteSpace = "pre-wrap";
+      memoryView.style.padding = "var(--spacing-4)";
+      memoryView.style.background = "var(--color-surface-elevated)";
+      memoryView.style.borderRadius = "var(--radius-sm)";
+      
+      const mem = selectedAgent.memory || { events: [], stances: [], claims: [] };
+      let text = "";
+      if (mem.events.length) text += `## EVENTS\n${mem.events.map(e => `- ${e}`).join("\n")}\n\n`;
+      if (mem.stances.length) text += `## STANCES\n${mem.stances.map(s => `- ${s.subject}: ${s.stance} | ${s.reason}`).join("\n")}\n\n`;
+      if (mem.claims.length) text += `## CLAIMS\n${mem.claims.map(c => `- ${c.claim} (${c.status})`).join("\n")}`;
+      
+      memoryView.textContent = text || "No memory entries yet. Execute a turn to populate.";
+      contentContainer.appendChild(memoryView);
     }
   }
 
   store.subscribe(render);
   render();
 
-  configArea.appendChild(strategyLabel);
-  configArea.appendChild(strategyInput);
+  configArea.appendChild(subTabs);
+  configArea.appendChild(contentContainer);
   configArea.appendChild(controls);
 
   body.appendChild(agentTabs);

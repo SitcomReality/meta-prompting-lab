@@ -64,6 +64,45 @@ export function createControlPanel(services) {
     });
   }
 
+  // Player Interaction
+  const interactionLabel = document.createElement("label");
+  interactionLabel.className = "field-label";
+  interactionLabel.textContent = "Inject Event / Player Message";
+
+  const interactionInput = document.createElement("div");
+  interactionInput.style.display = "flex";
+  interactionInput.style.gap = "var(--spacing-2)";
+
+  const interactionField = document.createElement("input");
+  interactionField.className = "field-input";
+  interactionField.placeholder = "Type something as 'The Player'...";
+
+  const sendButton = document.createElement("button");
+  sendButton.className = "button button--primary";
+  sendButton.textContent = "Inject";
+  sendButton.onclick = () => {
+    const val = interactionField.value.trim();
+    if (!val) return;
+    const currentState = store.getState();
+    const newGameState = currentState.gameState + `\nPlayer: ${val}`;
+    
+    // Also inject into agents' histories so they remember the player's message
+    const updatedAgents = currentState.agents.map(a => ({
+      ...a,
+      history: [...a.history, { role: "user", content: `Player: ${val}` }]
+    }));
+
+    store.setState({ 
+      gameState: newGameState, 
+      agents: updatedAgents,
+      ui: { ...currentState.ui, statusMessage: "Message injected into simulation context." }
+    });
+    interactionField.value = "";
+  };
+
+  interactionInput.appendChild(interactionField);
+  interactionInput.appendChild(sendButton);
+
   // Game State Textarea
   const stateLabel = document.createElement("label");
   stateLabel.className = "field-label";
@@ -94,6 +133,8 @@ export function createControlPanel(services) {
   body.appendChild(scenarioSelect);
   body.appendChild(rulesListLabel);
   body.appendChild(rulesContainer);
+  body.appendChild(interactionLabel);
+  body.appendChild(interactionInput);
   body.appendChild(stateLabel);
   body.appendChild(stateInput);
 

@@ -1,4 +1,5 @@
 import { runAgentStep } from "../services/agentService.js";
+import { extractMemoryUpdates } from "../services/memoryService.js";
 
 export async function executeTurn(services) {
   const { store, bus } = services;
@@ -41,15 +42,27 @@ export async function executeTurn(services) {
 
       updatedHistory.unshift(turnResult);
       
-      // Update the specific agent in our local array
+      // 1. Process Memory Updates
+      const memoryUpdates = await extractMemoryUpdates(agent, result.publicAction, context);
+      
+      let newMemory = agent.memory || { events: [], stances: [], claims: [] };
+      if (memoryUpdates) {
+        newMemory = {
+          events: [...(newMemory.events || []), ...(memoryUpdates.newEvents || [])].slice(-10),
+          stances: memoryUpdates.stances || newMemory.stances, // Overwrite stances with latest appraisal
+          claims: [...(newMemory.claims || []), ...(memoryUpdates.claims || [])].slice(-15)
+        };
+      }
+
+      // 2. Update the specific agent in our local array
       updatedAgents[i] = {
         ...agent,
         strategyPrompt: result.proposedStrategyUpdate || agent.strategyPrompt,
         history: [...agent.history, { role: "assistant", content: result.publicAction }],
-        // Add to condensed memory if logic exists, for now just keeping it structured
+        memory: newMemory
       };
 
-      // Update current game state with the new action so next agent sees it immediately
+      // 3. Update current game state with the new action so next agent sees it immediately
       currentGameState += `\n${agent.name}: ${result.publicAction}`;
 
     } catch (err) {
