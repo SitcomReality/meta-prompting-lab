@@ -15,4 +15,6 @@ export function initAppRoot(rootElement, { initialState }) {
 
   rootElement.innerHTML = "";
   rootElement.appendChild(layout.rootElement);
+
+  return services;
 }

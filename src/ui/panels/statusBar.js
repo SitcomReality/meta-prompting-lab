@@ -21,6 +21,7 @@ export function createStatusBar(services) {
   const { store } = services;
   store.subscribe((state) => {
     stepLabel.textContent = `Step: ${state.session.stepIndex}`;
+    hintLabel.textContent = state.ui.statusMessage || "Ready.";
   });
 
   return {

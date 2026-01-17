@@ -1,19 +1,27 @@
-export function createMetaRulesPanel() {
+export function createMetaRulesPanel(services) {
+  const { store } = services;
   const rootElement = document.createElement("section");
   rootElement.className = "panel panel--secondary panel--rules";
 
   const header = document.createElement("header");
   header.className = "panel__header";
-  header.textContent = "Meta Rules";
+  header.textContent = "Constraints & Rules";
 
   const body = document.createElement("div");
   body.className = "panel__body panel-rules";
 
-  const placeholder = document.createElement("div");
-  placeholder.className = "panel-rules__placeholder";
-  placeholder.textContent = "Rule cards, constraints, and scoring hooks will appear here.";
+  function renderRules(rules) {
+    body.innerHTML = "";
+    rules.forEach((rule) => {
+      const ruleEl = document.createElement("div");
+      ruleEl.className = "rule-item";
+      ruleEl.textContent = rule;
+      body.appendChild(ruleEl);
+    });
+  }
 
-  body.appendChild(placeholder);
+  store.subscribe((state) => renderRules(state.metaPrompt.rules));
+  renderRules(store.getState().metaPrompt.rules);
 
   rootElement.appendChild(header);
   rootElement.appendChild(body);

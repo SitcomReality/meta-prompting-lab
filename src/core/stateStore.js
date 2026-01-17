@@ -1,18 +1,31 @@
 export function createInitialState() {
   return {
     session: {
-      id: null,
+      id: "session_" + Date.now(),
       stepIndex: 0,
       isRunning: false,
     },
+    gameState: "A high-stakes debate about the future of AI governance. You are the lead skeptic.",
     metaPrompt: {
-      systemPrompt: "",
-      userPrompt: "",
-      rules: [],
+      rules: [
+        "Recursive adaptation: You MUST update your strategy if your current one fails.",
+        "Consistency: Maintain your core identity despite strategy shifts.",
+        "Conciseness: Keep public actions under 50 words."
+      ],
     },
+    agents: [
+      {
+        id: "bot_1",
+        name: "Socrates-GPT",
+        corePrompt: "You are a strategic debater. Your goal is to win the argument by questioning assumptions.",
+        strategyPrompt: "Initial Strategy: Be polite but firm. Use the Socratic method to lead opponents into contradictions.",
+        history: []
+      }
+    ],
     history: [],
     ui: {
-      activePanel: "workspace", // "workspace" | "rules" | "history"
+      activePanel: "workspace",
+      statusMessage: "Ready to begin."
     },
   };
 }
